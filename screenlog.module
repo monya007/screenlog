@@ -1,0 +1,83 @@
+<?php
+
+/**
+ * @file
+ * screenlog.module
+ */
+
+function screenlog_menu() {
+  $items = array();
+
+  $items['admin/config/development/screenlog'] = array(
+    'title' => 'Screenlog',
+    'access arguments' => array('administer site configuration'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('screenlog_admin_settings_form'),
+    'file' => 'screenlog.admin.inc',
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_libraries_info().
+ */
+function screenlog_libraries_info() {
+  $libraries['screenlog.js'] = array(
+    'name' => 'screenlog.js',
+    'vendor url' => 'https://github.com/chinchang/screenlog.js',
+    'download url' => 'https://github.com/chinchang/screenlog.js/zipball/master',
+    'version' => '0.2.2',
+    'files' => array(
+      'js' => array(
+        'screenlog.min.js' => array(
+        ),
+      ),
+    ),
+  );
+
+  $libraries['screenlog_custom'] = array(
+    'name' => 'Screenlog custom',
+    'version' => '1.0.0',
+    'library path' => drupal_get_path('module', 'screenlog') . '/js',
+    'dependencies' => array('screenlog.js'),
+    'files' => array(
+      'js' => array(
+        'screenlog.custom.js',
+      ),
+    ),
+  );
+  return $libraries;
+}
+
+/**
+ * Implements hook_preprocess_page().
+ */
+function screenlog_preprocess_page($page) {
+  // Match path if necessary.
+  if ($screenlog_pages = variable_get('screenlog_pages', '')) {
+    $pages = drupal_strtolower($screenlog_pages);
+
+    $path = drupal_strtolower(drupal_get_path_alias($_GET['q']));
+    // Compare the lowercase internal and lowercase path alias (if any).
+    $page_match = drupal_match_path($path, $pages);
+    if ($path != $_GET['q']) {
+      $page_match = $page_match || drupal_match_path($_GET['q'], $pages);
+    }
+  } else {
+    $page_match = TRUE;
+  }
+
+  if ($page_match && variable_get('screenlog_enable', FALSE)) {
+    if (libraries_get_path('screenlog.js')) {
+      libraries_load('screenlog_custom');
+    }
+    else {
+      $download_url = 'https://github.com/chinchang/screenlog.js/zipball/master';
+      $args = array(
+        '!url' => l($download_url, $download_url),
+      );
+      $msg = t('Please download the screenlog.js library from !url.', $args);
+      drupal_set_message($msg, 'warning');
+    }
+  }
+}
