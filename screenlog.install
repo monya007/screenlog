@@ -7,7 +7,7 @@
 /**
  * Implements hook_uninstall().
  */
-function stacktable_uninstall() {
+function screenlog_uninstall() {
   variable_del('screenlog_enable');
   variable_del('screenlog_pages');
 }
